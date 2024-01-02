@@ -10,6 +10,7 @@ import { isEmpty } from "lodash-es";
 
 import styles from "./Chat.module.css";
 import Azure from "../../assets/Azure.svg";
+import Baufest from "../../assets/baufest01.png";
 
 import {
     ChatMessage,
@@ -131,7 +132,8 @@ const Chat = () => {
         }
     }
 
-    const makeApiRequestWithoutCosmosDB = async (question: string, conversationId?: string) => {
+    const makeApiRequestWithoutCosmosDB = async (question: string, roleValue?: string, conversationId?: string) => {
+        console.log("makeApiRequestWithoutCosmosDB question:", question, " roleValue:", roleValue);
         setIsLoading(true);
         setShowLoadingMessage(true);
         const abortController = new AbortController();
@@ -141,6 +143,7 @@ const Chat = () => {
             id: uuid(),
             role: "user",
             content: question,
+            roleValue: roleValue,
             date: new Date().toISOString(),
         };
 
@@ -239,7 +242,8 @@ const Chat = () => {
         return abortController.abort();
     };
 
-    const makeApiRequestWithCosmosDB = async (question: string, conversationId?: string) => {
+    const makeApiRequestWithCosmosDB = async (question: string, roleValue?: string, conversationId?: string) => {
+        console.log("makeApiRequestWithCosmosDB");
         setIsLoading(true);
         setShowLoadingMessage(true);
         const abortController = new AbortController();
@@ -249,6 +253,7 @@ const Chat = () => {
             id: uuid(),
             role: "user",
             content: question,
+            roleValue: roleValue,
             date: new Date().toISOString(),
         };
 
@@ -586,12 +591,12 @@ const Chat = () => {
                         {!messages || messages.length < 1 ? (
                             <Stack className={styles.chatEmptyState}>
                                 <img
-                                    src={Azure}
+                                    src={Baufest}
                                     className={styles.chatIcon}
                                     aria-hidden="true"
                                 />
-                                <h1 className={styles.chatEmptyStateTitle}>Start chatting</h1>
-                                <h2 className={styles.chatEmptyStateSubtitle}>This chatbot is configured to answer your questions</h2>
+                                <h1 className={styles.chatEmptyStateTitle}>Piloto Chatbot con Azure Cognitive Search y Open AI </h1>
+                                <h2 className={styles.chatEmptyStateSubtitle}>Este chat está configurado para responder preguntas sobre un documento indexado</h2>
                             </Stack>
                         ) : (
                             <div className={styles.chatMessageStream} style={{ marginBottom: isLoading ? "40px" : "0px"}} role="log">
@@ -625,7 +630,7 @@ const Chat = () => {
                                         <div className={styles.chatMessageGpt}>
                                             <Answer
                                                 answer={{
-                                                    answer: "Generating answer...",
+                                                    answer: "Generando respuesta...",
                                                     citations: []
                                                 }}
                                                 onCitationClicked={() => null}
@@ -643,13 +648,13 @@ const Chat = () => {
                                     horizontal
                                     className={styles.stopGeneratingContainer}
                                     role="button"
-                                    aria-label="Stop generating"
+                                    aria-label="Detener"
                                     tabIndex={0}
                                     onClick={stopGenerating}
                                     onKeyDown={e => e.key === "Enter" || e.key === " " ? stopGenerating() : null}
                                     >
                                         <SquareRegular className={styles.stopGeneratingIcon} aria-hidden="true"/>
-                                        <span className={styles.stopGeneratingText} aria-hidden="true">Stop generating</span>
+                                        <span className={styles.stopGeneratingText} aria-hidden="true">Detener generación</span>
                                 </Stack>
                             )}
                             <Stack>
@@ -671,7 +676,7 @@ const Chat = () => {
                                     iconProps={{ iconName: 'Add' }}
                                     onClick={newChat}
                                     disabled={disabledButton()}
-                                    aria-label="start a new chat button"
+                                    aria-label="Empezar nuevo chat"
                                 />}
                                 <CommandBarButton
                                     role="button"
@@ -689,7 +694,7 @@ const Chat = () => {
                                     iconProps={{ iconName: 'Broom' }}
                                     onClick={appStateContext?.state.isCosmosDBAvailable?.status !== CosmosDBStatus.NotConfigured ? clearChat : newChat}
                                     disabled={disabledButton()}
-                                    aria-label="clear chat button"
+                                    aria-label="Limpiar chat"
                                 />
                                 <Dialog
                                     hidden={hideErrorDialog}
@@ -701,10 +706,11 @@ const Chat = () => {
                             </Stack>
                             <QuestionInput
                                 clearOnSend
-                                placeholder="Type a new question..."
+                                placeholder="Escriba una nueva pregunta..."
+                                rolePlaceHolder="Escriba el rol de comportamiento para el asistente..."
                                 disabled={isLoading}
-                                onSend={(question, id) => {
-                                    appStateContext?.state.isCosmosDBAvailable?.cosmosDB ? makeApiRequestWithCosmosDB(question, id) : makeApiRequestWithoutCosmosDB(question, id)
+                                onSend={(question, roleValue,id) => {
+                                    appStateContext?.state.isCosmosDBAvailable?.cosmosDB ? makeApiRequestWithCosmosDB(question, roleValue,id) : makeApiRequestWithoutCosmosDB(question, roleValue, id)
                                 }}
                                 conversationId={appStateContext?.state.currentChat?.id ? appStateContext?.state.currentChat?.id : undefined}
                             />

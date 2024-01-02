@@ -205,6 +205,10 @@ def generateFilterString(userToken):
 
 def prepare_body_headers_with_data(request):
     request_messages = request.json["messages"]
+    logging.debug(f"prepare_body_headers_with_data : request_messages last message {request_messages[-1]}")
+    last_message = request_messages[-1]
+    role_value = last_message.get('roleValue', AZURE_OPENAI_SYSTEM_MESSAGE)
+    logging.debug(f"prepare_body_headers_with_data : role_value to test {role_value}")
 
     body = {
         "messages": request_messages,
@@ -254,7 +258,7 @@ def prepare_body_headers_with_data(request):
                     "topNDocuments": AZURE_SEARCH_TOP_K,
                     "queryType": query_type,
                     "semanticConfiguration": AZURE_SEARCH_SEMANTIC_SEARCH_CONFIG if AZURE_SEARCH_SEMANTIC_SEARCH_CONFIG else "",
-                    "roleInformation": AZURE_OPENAI_SYSTEM_MESSAGE,
+                    "roleInformation": role_value,
                     "filter": filter,
                     "strictness": int(AZURE_SEARCH_STRICTNESS)
                 }
@@ -487,6 +491,7 @@ def conversation_with_data(request_body):
     base_url = AZURE_OPENAI_ENDPOINT if AZURE_OPENAI_ENDPOINT else f"https://{AZURE_OPENAI_RESOURCE}.openai.azure.com/"
     endpoint = f"{base_url}openai/deployments/{AZURE_OPENAI_MODEL}/extensions/chat/completions?api-version={AZURE_OPENAI_PREVIEW_API_VERSION}"
     history_metadata = request_body.get("history_metadata", {})
+    logging.debug(f"conversion_with_data : \nbody {body} \nheaders {headers} \nendpoint {endpoint} \nhistory_metadata {history_metadata}")
 
     if not SHOULD_STREAM:
         r = requests.post(endpoint, headers=headers, json=body)
@@ -501,7 +506,9 @@ def conversation_with_data(request_body):
             return Response(format_as_ndjson(result), status=status_code)
 
     else:
-        return Response(stream_with_data(body, headers, endpoint, history_metadata), mimetype='text/event-stream')
+        responseValue = Response(stream_with_data(body, headers, endpoint, history_metadata), mimetype='text/event-stream')
+        logging.debug(f"conversion_with_data : responseValue {responseValue}")
+        return responseValue
 
 def stream_without_data(response, history_metadata={}):
     responseText = ""
@@ -550,6 +557,7 @@ def conversation_without_data(request_body):
                 "content": message["content"]
             })
 
+    logging.exception("Before openai.ChatCompletion.create %s",AZURE_OPENAI_MODEL)
     response = openai.ChatCompletion.create(
         engine=AZURE_OPENAI_MODEL,
         messages = messages,

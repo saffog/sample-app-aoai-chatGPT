@@ -5,25 +5,34 @@ import Send from "../../assets/Send.svg";
 import styles from "./QuestionInput.module.css";
 
 interface Props {
-    onSend: (question: string, id?: string) => void;
+    onSend: (question: string, roleValue?: string, id?: string) => void;
     disabled: boolean;
     placeholder?: string;
+    rolePlaceHolder?: string;
     clearOnSend?: boolean;
     conversationId?: string;
 }
 
-export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, conversationId }: Props) => {
+export const QuestionInput = ({ onSend, disabled, placeholder, rolePlaceHolder, clearOnSend, conversationId }: Props) => {
     const [question, setQuestion] = useState<string>("");
+    const [roleValue, setRoleValue] = useState<string>("");
 
     const sendQuestion = () => {
         if (disabled || !question.trim()) {
             return;
         }
+        console.log("Sending question:", question, "roleValue:", roleValue, "conversationId:", conversationId);
 
-        if(conversationId){
-            onSend(question, conversationId);
+        if(conversationId && roleValue){
+            onSend(question, roleValue, conversationId);
         }else{
-            onSend(question);
+            if (conversationId) {
+                onSend(question, undefined, conversationId);
+            } else if (roleValue) {
+                onSend(question, roleValue, undefined);                
+            } else {
+                onSend(question);
+            }
         }
 
         if (clearOnSend) {
@@ -42,10 +51,21 @@ export const QuestionInput = ({ onSend, disabled, placeholder, clearOnSend, conv
         setQuestion(newValue || "");
     };
 
+    const onRoleChange = (_ev: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>, newValue?: string) => {
+        setRoleValue(newValue || "");
+    }
+
     const sendQuestionDisabled = disabled || !question.trim();
 
     return (
         <Stack horizontal className={styles.questionInputContainer}>
+            <TextField 
+                className={styles.questionInputTextArea} 
+                placeholder={rolePlaceHolder} 
+                multiline 
+                resizable={false}
+                value={roleValue} 
+                onChange={onRoleChange} />
             <TextField
                 className={styles.questionInputTextArea}
                 placeholder={placeholder}
